@@ -18,7 +18,7 @@ jobs:
           components: clippy
 
       - name: Cache cargo registry and build
-        uses: Swatinem/rust-cache@2
+        uses: Swatinem/rust-cache@v2
 
       - name: Run tests
         run: cargo test
