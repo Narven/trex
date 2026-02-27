@@ -2,6 +2,14 @@
 
 Rust-powered pytest collection. Run your tests the same way you always do — just faster.
 
+**Beta / work in progress** — trex is still in early stages. It works for typical pytest layouts, but expect rough edges and changes as it evolves.
+
+### What trex does
+
+Pytest’s normal lifecycle is: **discover** which files might be tests, **collect** them (import modules, find test functions and classes), then **run** the tests. The discovery and collection steps are done in Python and can be slow on large trees.
+
+Trex is a small Rust binary that does discovery and test-name extraction very quickly. The `conftest.py` that `trex init` creates plugs into pytest’s hooks: it runs trex once at the start, then **hijacks** which paths pytest collects (`pytest_ignore_collect`) and which items are kept and in what order (`pytest_collection_modifyitems`). Pytest still imports and runs your tests — it just no longer decides *which* files to look at or *in what order*; trex does. Same tests, same commands, faster collection.
+
 ---
 
 ## How to use (that’s it)
