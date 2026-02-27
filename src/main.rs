@@ -299,3 +299,103 @@ fn main() {
         Commands::Init { dir } => run_init(dir),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+
+    #[test]
+    fn glob_to_regex_matches_test_py() {
+        let re = glob_to_regex("test_*.py");
+        assert!(re.is_match("test_foo.py"));
+        assert!(re.is_match("test_operations.py"));
+        assert!(!re.is_match("foo.py"));
+        assert!(!re.is_match("test_foo.txt"));
+    }
+
+    #[test]
+    fn glob_to_regex_star_and_dot_escaped() {
+        let re = glob_to_regex("*.py");
+        assert!(re.is_match("a.py"));
+        assert!(re.is_match("test_foo.py"));
+        assert!(!re.is_match("axpy"));
+    }
+
+    #[test]
+    fn extract_tests_top_level_function() {
+        let source = "def test_foo(): pass";
+        assert_eq!(extract_tests_from_source(source), vec!["test_foo"]);
+    }
+
+    #[test]
+    fn extract_tests_class_method() {
+        let source = r#"
+class TestBar:
+    def test_baz(self):
+        pass
+"#;
+        assert_eq!(extract_tests_from_source(source), vec!["TestBar::test_baz"]);
+    }
+
+    #[test]
+    fn extract_tests_mixed_top_level_and_class() {
+        let source = r#"
+def test_standalone():
+    pass
+
+class TestFoo:
+    def test_method(self):
+        pass
+"#;
+        let got = extract_tests_from_source(source);
+        assert_eq!(got.len(), 2);
+        assert_eq!(got[0], "test_standalone");
+        assert_eq!(got[1], "TestFoo::test_method");
+    }
+
+    #[test]
+    fn extract_tests_empty() {
+        assert!(extract_tests_from_source("").is_empty());
+        assert!(extract_tests_from_source("def foo(): pass").is_empty());
+        assert!(extract_tests_from_source("class Bar: pass").is_empty());
+    }
+
+    #[test]
+    fn extract_tests_nested_class_current_behavior() {
+        // Current code only tracks one class (indent 0); inner class methods use outer class name or are skipped
+        let source = r#"
+class TestOuter:
+    class TestInner:
+        def test_inner(self):
+            pass
+"#;
+        let got = extract_tests_from_source(source);
+        // TestInner is at indent 4, so current_class stays TestOuter; test_inner is indented > 0 so we get TestOuter::test_inner
+        assert_eq!(got, vec!["TestOuter::test_inner"]);
+    }
+
+    #[test]
+    fn collect_tests_finds_file_and_extracts_tests() {
+        let tmp = tempfile::tempdir().unwrap();
+        let test_file = tmp.path().join("test_sample.py");
+        let content = r#"
+def test_ok():
+    pass
+
+class TestFoo:
+    def test_bar(self):
+        pass
+"#;
+        std::fs::File::create(&test_file)
+            .unwrap()
+            .write_all(content.as_bytes())
+            .unwrap();
+        let results = collect_tests(tmp.path(), "test_*.py");
+        assert_eq!(results.len(), 1);
+        assert!(results[0].file.contains("test_sample.py"));
+        assert_eq!(results[0].tests.len(), 2);
+        assert_eq!(results[0].tests[0], "test_ok");
+        assert_eq!(results[0].tests[1], "TestFoo::test_bar");
+    }
+}
