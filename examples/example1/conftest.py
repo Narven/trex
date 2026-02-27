@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -13,6 +14,11 @@ def _get_trex_bin():
         return os.environ["TREX_BIN"]
     conftest_dir = Path(__file__).resolve().parent
     default = (conftest_dir / "../../target/release/trex").resolve()
+    if default.exists():
+        return str(default)
+    trex_on_path = shutil.which("trex")
+    if trex_on_path:
+        return trex_on_path
     return str(default)
 
 
