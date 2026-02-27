@@ -1,0 +1,20 @@
+[package]
+name = "trex"
+version = "0.1.0"
+edition = "2024"
+description = "Rust-powered pytest collection: drive test discovery and ordering from a fast native binary"
+license = "MIT"
+repository = "https://github.com/narven/trex"
+homepage = "https://github.com/narven/trex"
+documentation = "https://github.com/narven/trex#readme"
+keywords = ["pytest", "testing", "test-discovery", "rust"]
+categories = ["development-tools::testing"]
+readme = "README.md"
+rust-version = "1.70"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+walkdir = "2"
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
