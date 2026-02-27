@@ -23,5 +23,8 @@ jobs:
       - name: Run tests
         run: cargo test
 
+      - name: Build release
+        run: cargo build --release
+
       - name: Clippy
         run: cargo clippy -- -D warnings
